@@ -1,21 +1,21 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"bytes"
 	"crypto/rand"
 	"testing"
 
-	"github.com/KarpelesLab/cryptutil"
+	"github.com/BottleFmt/gobottle"
 )
 
 func TestCryptECDH(t *testing.T) {
 	msg := []byte("message to alice")
-	enc, err := cryptutil.ECDHEncrypt(rand.Reader, msg, must(alice.ECDH()).PublicKey())
+	enc, err := gobottle.ECDHEncrypt(rand.Reader, msg, must(alice.ECDH()).PublicKey())
 	if err != nil {
 		t.Errorf("failed to encrypt: %s", err)
 	}
 
-	dec, err := cryptutil.ECDHDecrypt(enc, must(alice.ECDH()))
+	dec, err := gobottle.ECDHDecrypt(enc, must(alice.ECDH()))
 	if err != nil {
 		t.Errorf("failed to decrypt: %s", err)
 	}

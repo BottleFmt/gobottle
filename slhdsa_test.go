@@ -1,10 +1,10 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/KarpelesLab/cryptutil"
+	"github.com/BottleFmt/gobottle"
 	"github.com/KarpelesLab/slhdsa"
 )
 
@@ -16,18 +16,18 @@ func TestSLHDSA_SHA2_128s_SignVerify(t *testing.T) {
 
 	message := []byte("test message for SLH-DSA-SHA2-128s")
 
-	sig, err := cryptutil.Sign(rand.Reader, key, message)
+	sig, err := gobottle.Sign(rand.Reader, key, message)
 	if err != nil {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	err = cryptutil.Verify(key.Public(), message, sig)
+	err = gobottle.Verify(key.Public(), message, sig)
 	if err != nil {
 		t.Errorf("failed to verify: %v", err)
 	}
 
 	// Test with wrong message
-	err = cryptutil.Verify(key.Public(), []byte("wrong message"), sig)
+	err = gobottle.Verify(key.Public(), []byte("wrong message"), sig)
 	if err == nil {
 		t.Error("verification should fail with wrong message")
 	}
@@ -41,12 +41,12 @@ func TestSLHDSA_SHA2_128f_SignVerify(t *testing.T) {
 
 	message := []byte("test message for SLH-DSA-SHA2-128f")
 
-	sig, err := cryptutil.Sign(rand.Reader, key, message)
+	sig, err := gobottle.Sign(rand.Reader, key, message)
 	if err != nil {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	err = cryptutil.Verify(key.Public(), message, sig)
+	err = gobottle.Verify(key.Public(), message, sig)
 	if err != nil {
 		t.Errorf("failed to verify: %v", err)
 	}
@@ -60,12 +60,12 @@ func TestSLHDSA_SHAKE_128s_SignVerify(t *testing.T) {
 
 	message := []byte("test message for SLH-DSA-SHAKE-128s")
 
-	sig, err := cryptutil.Sign(rand.Reader, key, message)
+	sig, err := gobottle.Sign(rand.Reader, key, message)
 	if err != nil {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	err = cryptutil.Verify(key.Public(), message, sig)
+	err = gobottle.Verify(key.Public(), message, sig)
 	if err != nil {
 		t.Errorf("failed to verify: %v", err)
 	}
@@ -80,19 +80,19 @@ func TestSLHDSA_WithContext(t *testing.T) {
 	message := []byte("test message with context")
 	opts := &slhdsa.Options{Context: []byte("test context")}
 
-	sig, err := cryptutil.Sign(rand.Reader, key, message, opts)
+	sig, err := gobottle.Sign(rand.Reader, key, message, opts)
 	if err != nil {
 		t.Fatalf("failed to sign with context: %v", err)
 	}
 
-	err = cryptutil.Verify(key.Public(), message, sig, opts)
+	err = gobottle.Verify(key.Public(), message, sig, opts)
 	if err != nil {
 		t.Errorf("failed to verify with context: %v", err)
 	}
 
 	// Verify should fail with wrong context
 	wrongOpts := &slhdsa.Options{Context: []byte("wrong context")}
-	err = cryptutil.Verify(key.Public(), message, sig, wrongOpts)
+	err = gobottle.Verify(key.Public(), message, sig, wrongOpts)
 	if err == nil {
 		t.Error("verification should fail with wrong context")
 	}
@@ -105,25 +105,25 @@ func TestSLHDSA_PKIXMarshalUnmarshal(t *testing.T) {
 	}
 
 	// Marshal public key
-	pubDER, err := cryptutil.MarshalPKIXPublicKey(key.Public())
+	pubDER, err := gobottle.MarshalPKIXPublicKey(key.Public())
 	if err != nil {
 		t.Fatalf("failed to marshal public key: %v", err)
 	}
 
 	// Parse public key
-	parsedPub, err := cryptutil.ParsePKIXPublicKey(pubDER)
+	parsedPub, err := gobottle.ParsePKIXPublicKey(pubDER)
 	if err != nil {
 		t.Fatalf("failed to parse public key: %v", err)
 	}
 
 	// Verify with parsed key
 	message := []byte("test message")
-	sig, err := cryptutil.Sign(rand.Reader, key, message)
+	sig, err := gobottle.Sign(rand.Reader, key, message)
 	if err != nil {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	err = cryptutil.Verify(parsedPub, message, sig)
+	err = gobottle.Verify(parsedPub, message, sig)
 	if err != nil {
 		t.Errorf("failed to verify with parsed key: %v", err)
 	}
@@ -136,26 +136,26 @@ func TestSLHDSA_PrivateKeyMarshalUnmarshal(t *testing.T) {
 	}
 
 	// Marshal private key
-	privDER, err := cryptutil.MarshalSLHDSAPrivateKey(key)
+	privDER, err := gobottle.MarshalSLHDSAPrivateKey(key)
 	if err != nil {
 		t.Fatalf("failed to marshal private key: %v", err)
 	}
 
 	// Parse private key
-	parsedKey, err := cryptutil.ParseSLHDSAPrivateKey(privDER)
+	parsedKey, err := gobottle.ParseSLHDSAPrivateKey(privDER)
 	if err != nil {
 		t.Fatalf("failed to parse private key: %v", err)
 	}
 
 	// Sign with parsed key
 	message := []byte("test message")
-	sig, err := cryptutil.Sign(rand.Reader, parsedKey, message)
+	sig, err := gobottle.Sign(rand.Reader, parsedKey, message)
 	if err != nil {
 		t.Fatalf("failed to sign with parsed key: %v", err)
 	}
 
 	// Verify with original public key
-	err = cryptutil.Verify(key.Public(), message, sig)
+	err = gobottle.Verify(key.Public(), message, sig)
 	if err != nil {
 		t.Errorf("failed to verify signature from parsed key: %v", err)
 	}
@@ -178,23 +178,23 @@ func TestSLHDSA_AllParamsPKIX(t *testing.T) {
 				t.Fatalf("failed to generate key: %v", err)
 			}
 
-			pubDER, err := cryptutil.MarshalPKIXPublicKey(key.Public())
+			pubDER, err := gobottle.MarshalPKIXPublicKey(key.Public())
 			if err != nil {
 				t.Fatalf("failed to marshal public key: %v", err)
 			}
 
-			parsedPub, err := cryptutil.ParsePKIXPublicKey(pubDER)
+			parsedPub, err := gobottle.ParsePKIXPublicKey(pubDER)
 			if err != nil {
 				t.Fatalf("failed to parse public key: %v", err)
 			}
 
 			message := []byte("test")
-			sig, err := cryptutil.Sign(rand.Reader, key, message)
+			sig, err := gobottle.Sign(rand.Reader, key, message)
 			if err != nil {
 				t.Fatalf("failed to sign: %v", err)
 			}
 
-			err = cryptutil.Verify(parsedPub, message, sig)
+			err = gobottle.Verify(parsedPub, message, sig)
 			if err != nil {
 				t.Errorf("failed to verify: %v", err)
 			}
@@ -210,14 +210,14 @@ func TestBottleWithSLHDSA(t *testing.T) {
 	}
 
 	// Create and sign a bottle
-	bottle := cryptutil.NewBottle([]byte("Hash-based signed message"))
+	bottle := gobottle.NewBottle([]byte("Hash-based signed message"))
 	err = bottle.Sign(rand.Reader, slhdsaKey)
 	if err != nil {
 		t.Fatalf("failed to sign bottle: %v", err)
 	}
 
 	// Open and verify
-	opener := cryptutil.MustOpener()
+	opener := gobottle.MustOpener()
 	msg, info, err := opener.Open(bottle)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -240,7 +240,7 @@ func TestBottleWithSLHDSAAndEncryption(t *testing.T) {
 	}
 
 	// Create bottle, encrypt for Bob, sign with SLH-DSA
-	bottle := cryptutil.NewBottle([]byte("Encrypted and hash-based signed"))
+	bottle := gobottle.NewBottle([]byte("Encrypted and hash-based signed"))
 	err = bottle.Encrypt(rand.Reader, bob.Public())
 	if err != nil {
 		t.Fatalf("failed to encrypt bottle: %v", err)
@@ -255,7 +255,7 @@ func TestBottleWithSLHDSAAndEncryption(t *testing.T) {
 	}
 
 	// Open with Bob's key
-	opener := cryptutil.MustOpener(bob)
+	opener := gobottle.MustOpener(bob)
 	msg, info, err := opener.Open(bottle)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)

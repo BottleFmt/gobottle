@@ -1,4 +1,4 @@
-package cryptutil
+package gobottle
 
 import (
 	"crypto"

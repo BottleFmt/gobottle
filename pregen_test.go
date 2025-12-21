@@ -1,11 +1,11 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"testing"
 
-	"github.com/KarpelesLab/cryptutil"
+	"github.com/BottleFmt/gobottle"
 )
 
 // Pre-generated test data for regression testing
@@ -36,7 +36,7 @@ func mustDecode(s string) []byte {
 }
 
 func TestPregenAliceSignedCleartext(t *testing.T) {
-	opener := cryptutil.MustOpener()
+	opener := gobottle.MustOpener()
 	res, info, err := opener.OpenCbor(aliceSignedCleartext)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -54,7 +54,7 @@ func TestPregenAliceSignedCleartext(t *testing.T) {
 
 func TestPregenChloeSignedCleartext(t *testing.T) {
 	chloeKey := chloe.(ed25519.PrivateKey)
-	opener := cryptutil.MustOpener()
+	opener := gobottle.MustOpener()
 	res, info, err := opener.OpenCbor(chloeSignedCleartext)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -68,7 +68,7 @@ func TestPregenChloeSignedCleartext(t *testing.T) {
 }
 
 func TestPregenAliceToBobEncrypted(t *testing.T) {
-	opener := cryptutil.MustOpener(bob)
+	opener := gobottle.MustOpener(bob)
 	res, info, err := opener.OpenCbor(aliceToBobEncrypted)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -84,7 +84,7 @@ func TestPregenAliceToBobEncrypted(t *testing.T) {
 	}
 
 	// Should fail without Bob's key
-	openerNoKey := cryptutil.MustOpener()
+	openerNoKey := gobottle.MustOpener()
 	_, _, err = openerNoKey.OpenCbor(aliceToBobEncrypted)
 	if err == nil {
 		t.Error("should fail without Bob's key")
@@ -95,7 +95,7 @@ func TestPregenChloeToDanielEncrypted(t *testing.T) {
 	chloeKey := chloe.(ed25519.PrivateKey)
 	danielKey := daniel.(ed25519.PrivateKey)
 
-	opener := cryptutil.MustOpener(danielKey)
+	opener := gobottle.MustOpener(danielKey)
 	res, info, err := opener.OpenCbor(chloeToDanielEncrypted)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -115,7 +115,7 @@ func TestPregenAliceToBobAndDaniel(t *testing.T) {
 	danielKey := daniel.(ed25519.PrivateKey)
 
 	// Open with Bob's key
-	openerBob := cryptutil.MustOpener(bob)
+	openerBob := gobottle.MustOpener(bob)
 	res, info, err := openerBob.OpenCbor(aliceToBobAndDaniel)
 	if err != nil {
 		t.Fatalf("failed to open with Bob: %v", err)
@@ -128,7 +128,7 @@ func TestPregenAliceToBobAndDaniel(t *testing.T) {
 	}
 
 	// Open with Daniel's key
-	openerDaniel := cryptutil.MustOpener(danielKey)
+	openerDaniel := gobottle.MustOpener(danielKey)
 	res2, info2, err := openerDaniel.OpenCbor(aliceToBobAndDaniel)
 	if err != nil {
 		t.Fatalf("failed to open with Daniel: %v", err)
@@ -142,7 +142,7 @@ func TestPregenAliceToBobAndDaniel(t *testing.T) {
 }
 
 func TestPregenAnonymousToBob(t *testing.T) {
-	opener := cryptutil.MustOpener(bob)
+	opener := gobottle.MustOpener(bob)
 	res, info, err := opener.OpenCbor(anonymousToBob)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -161,7 +161,7 @@ func TestPregenAnonymousToBob(t *testing.T) {
 func TestPregenAliceAndChloeSigned(t *testing.T) {
 	chloeKey := chloe.(ed25519.PrivateKey)
 
-	opener := cryptutil.MustOpener()
+	opener := gobottle.MustOpener()
 	res, info, err := opener.OpenCbor(aliceAndChloeSigned)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -184,7 +184,7 @@ func TestPregenNestedBobThenDaniel(t *testing.T) {
 	danielKey := daniel.(ed25519.PrivateKey)
 
 	// Need both keys to decrypt nested bottle
-	opener := cryptutil.MustOpener(bob, danielKey)
+	opener := gobottle.MustOpener(bob, danielKey)
 	res, info, err := opener.OpenCbor(nestedBobThenDaniel)
 	if err != nil {
 		t.Fatalf("failed to open bottle: %v", err)
@@ -200,7 +200,7 @@ func TestPregenNestedBobThenDaniel(t *testing.T) {
 	}
 
 	// Should fail with only Daniel's key (outer layer)
-	openerDanielOnly := cryptutil.MustOpener(danielKey)
+	openerDanielOnly := gobottle.MustOpener(danielKey)
 	_, _, err = openerDanielOnly.OpenCbor(nestedBobThenDaniel)
 	if err == nil {
 		t.Error("should fail with only Daniel's key")
@@ -208,7 +208,7 @@ func TestPregenNestedBobThenDaniel(t *testing.T) {
 }
 
 func TestPregenAliceIDCard(t *testing.T) {
-	var id cryptutil.IDCard
+	var id gobottle.IDCard
 	err := id.UnmarshalBinary(aliceIDCard)
 	if err != nil {
 		t.Fatalf("failed to unmarshal Alice's IDCard: %v", err)
@@ -226,7 +226,7 @@ func TestPregenAliceIDCard(t *testing.T) {
 }
 
 func TestPregenBobIDCard(t *testing.T) {
-	var id cryptutil.IDCard
+	var id gobottle.IDCard
 	err := id.UnmarshalBinary(bobIDCard)
 	if err != nil {
 		t.Fatalf("failed to unmarshal Bob's IDCard: %v", err)
@@ -245,7 +245,7 @@ func TestPregenBobIDCard(t *testing.T) {
 func TestPregenChloeIDCard(t *testing.T) {
 	chloeKey := chloe.(ed25519.PrivateKey)
 
-	var id cryptutil.IDCard
+	var id gobottle.IDCard
 	err := id.UnmarshalBinary(chloeIDCard)
 	if err != nil {
 		t.Fatalf("failed to unmarshal Chloe's IDCard: %v", err)
@@ -264,7 +264,7 @@ func TestPregenChloeIDCard(t *testing.T) {
 func TestPregenDanielIDCard(t *testing.T) {
 	danielKey := daniel.(ed25519.PrivateKey)
 
-	var id cryptutil.IDCard
+	var id gobottle.IDCard
 	err := id.UnmarshalBinary(danielIDCard)
 	if err != nil {
 		t.Fatalf("failed to unmarshal Daniel's IDCard: %v", err)

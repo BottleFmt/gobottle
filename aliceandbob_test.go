@@ -1,4 +1,4 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"crypto/x509"

@@ -1,4 +1,4 @@
-package cryptutil
+package gobottle
 
 // MemClr is a simple function that will clear a buffer in order to make it easier to
 // reset memory storing private keys on defer.

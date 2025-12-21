@@ -1,14 +1,14 @@
-[![GoDoc](https://godoc.org/github.com/KarpelesLab/cryptutil?status.svg)](https://godoc.org/github.com/KarpelesLab/cryptutil)
-[![CI](https://github.com/KarpelesLab/cryptutil/actions/workflows/ci.yml/badge.svg)](https://github.com/KarpelesLab/cryptutil/actions/workflows/ci.yml)
+[![GoDoc](https://godoc.org/github.com/BottleFmt/gobottle?status.svg)](https://godoc.org/github.com/BottleFmt/gobottle)
+[![CI](https://github.com/BottleFmt/gobottle/actions/workflows/ci.yml/badge.svg)](https://github.com/BottleFmt/gobottle/actions/workflows/ci.yml)
 
-# cryptutil
+# gobottle
 
-A comprehensive Go cryptographic utility library providing high-level APIs for encryption, signing, and key management. Supports both classical (ECDSA, Ed25519, RSA) and post-quantum (ML-KEM, ML-DSA) cryptography.
+A comprehensive Go library for the Bottle RFC, providing layered message containers with encryption and signatures. Supports both classical (ECDSA, Ed25519, RSA) and post-quantum (ML-KEM, ML-DSA, SLH-DSA) cryptography.
 
 ## Installation
 
 ```bash
-go get github.com/KarpelesLab/cryptutil
+go get github.com/BottleFmt/gobottle
 ```
 
 Requires Go 1.24 or later.
@@ -33,11 +33,11 @@ Bottles are versatile containers for arbitrary data that support multiple layers
 ```go
 import (
     "crypto/rand"
-    "github.com/KarpelesLab/cryptutil"
+    "github.com/BottleFmt/gobottle"
 )
 
 // Create a bottle with a message
-bottle := cryptutil.NewBottle([]byte("secret message"))
+bottle := gobottle.NewBottle([]byte("secret message"))
 
 // Encrypt for one or more recipients (any recipient can decrypt)
 bottle.Encrypt(rand.Reader, bobPublicKey, alicePublicKey)
@@ -49,7 +49,7 @@ bottle.BottleUp()
 bottle.Sign(rand.Reader, senderPrivateKey)
 
 // Open the bottle (Bob decrypts)
-opener, err := cryptutil.NewOpener(bobPrivateKey)
+opener, err := gobottle.NewOpener(bobPrivateKey)
 message, info, err := opener.Open(bottle)
 
 // Check who signed it
@@ -69,14 +69,14 @@ type MyData struct {
 }
 
 // CBOR encoding (compact, binary)
-bottle, err := cryptutil.Marshal(MyData{Name: "test", Value: 42})
+bottle, err := gobottle.Marshal(MyData{Name: "test", Value: 42})
 
 // JSON encoding
-bottle, err := cryptutil.MarshalJson(MyData{Name: "test", Value: 42})
+bottle, err := gobottle.MarshalJson(MyData{Name: "test", Value: 42})
 
 // Unmarshal from bottle
 var data MyData
-opener := cryptutil.MustOpener(privateKey)
+opener := gobottle.MustOpener(privateKey)
 info, err := opener.Unmarshal(bottle, &data)
 ```
 
@@ -98,35 +98,35 @@ ML-KEM (formerly CRYSTALS-Kyber) provides quantum-resistant key encapsulation. T
 
 ```go
 // Generate ML-KEM-768 hybrid key (recommended)
-privateKey, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+privateKey, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 
 // Generate ML-KEM-768 pure (no X25519)
-privateKey, err := cryptutil.GenerateMLKEMKey(rand.Reader, false)
+privateKey, err := gobottle.GenerateMLKEMKey(rand.Reader, false)
 
 // Generate ML-KEM-1024 for higher security
-privateKey, err := cryptutil.GenerateMLKEMKey1024(rand.Reader, true)
+privateKey, err := gobottle.GenerateMLKEMKey1024(rand.Reader, true)
 ```
 
 ### Encryption and Decryption
 
 ```go
 // Hybrid encryption (X25519 + ML-KEM)
-ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, publicKey)
+ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, publicKey)
 
 // Pure ML-KEM encryption
-ciphertext, err := cryptutil.MLKEMEncrypt(rand.Reader, plaintext, publicKey)
+ciphertext, err := gobottle.MLKEMEncrypt(rand.Reader, plaintext, publicKey)
 
 // Decryption (auto-detects hybrid vs pure)
-plaintext, err := cryptutil.MLKEMDecrypt(ciphertext, privateKey)
+plaintext, err := gobottle.MLKEMDecrypt(ciphertext, privateKey)
 ```
 
 ### Using ML-KEM with Bottles
 
 ```go
 // ML-KEM keys work seamlessly with bottles
-mlkemKey, _ := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+mlkemKey, _ := gobottle.GenerateMLKEMKey(rand.Reader, true)
 
-bottle := cryptutil.NewBottle([]byte("quantum-safe message"))
+bottle := gobottle.NewBottle([]byte("quantum-safe message"))
 bottle.Encrypt(rand.Reader, mlkemKey.Public())
 
 // Mixed recipients (classical + post-quantum)
@@ -141,8 +141,8 @@ privDER, err := privateKey.MarshalPKCS8PrivateKey()
 pubDER, err := publicKey.MarshalPKIXPublicKey()
 
 // Parse from DER
-privateKey, err := cryptutil.ParseMLKEMPrivateKey(privDER)
-publicKey, err := cryptutil.ParseMLKEMPublicKey(pubDER)
+privateKey, err := gobottle.ParseMLKEMPrivateKey(privDER)
+publicKey, err := gobottle.ParseMLKEMPublicKey(pubDER)
 ```
 
 ## ML-DSA Post-Quantum Signatures
@@ -170,15 +170,15 @@ key87, err := mldsa.GenerateKey87(rand.Reader)  // Level 5
 
 ```go
 // Sign a message (ML-DSA signs messages directly, no pre-hashing)
-signature, err := cryptutil.Sign(rand.Reader, key, message)
+signature, err := gobottle.Sign(rand.Reader, key, message)
 
 // Verify signature
-err = cryptutil.Verify(key.PublicKey(), message, signature)
+err = gobottle.Verify(key.PublicKey(), message, signature)
 
 // Sign with context for domain separation
 opts := &mldsa.SignerOpts{Context: []byte("my-application")}
-signature, err := cryptutil.Sign(rand.Reader, key, message, opts)
-err = cryptutil.Verify(key.PublicKey(), message, signature, opts)
+signature, err := gobottle.Sign(rand.Reader, key, message, opts)
+err = gobottle.Verify(key.PublicKey(), message, signature, opts)
 ```
 
 ### Using ML-DSA with Bottles
@@ -187,11 +187,11 @@ err = cryptutil.Verify(key.PublicKey(), message, signature, opts)
 // ML-DSA keys work seamlessly with bottles
 key, _ := mldsa.GenerateKey65(rand.Reader)
 
-bottle := cryptutil.NewBottle([]byte("quantum-safe signed message"))
+bottle := gobottle.NewBottle([]byte("quantum-safe signed message"))
 bottle.Sign(rand.Reader, key)
 
 // Verify on open
-opener := cryptutil.MustOpener()
+opener := gobottle.MustOpener()
 msg, info, err := opener.Open(bottle)
 if info.SignedBy(key.PublicKey()) {
     fmt.Println("Verified ML-DSA signature")
@@ -202,12 +202,12 @@ if info.SignedBy(key.PublicKey()) {
 
 ```go
 // Marshal to PKCS#8 (private) / PKIX (public)
-privDER, err := cryptutil.MarshalMLDSAPrivateKey(key)
-pubDER, err := cryptutil.MarshalPKIXPublicKey(key.PublicKey())
+privDER, err := gobottle.MarshalMLDSAPrivateKey(key)
+pubDER, err := gobottle.MarshalPKIXPublicKey(key.PublicKey())
 
 // Parse from DER
-privateKey, err := cryptutil.ParseMLDSAPrivateKey(privDER)
-publicKey, err := cryptutil.ParsePKIXPublicKey(pubDER)
+privateKey, err := gobottle.ParseMLDSAPrivateKey(privDER)
+publicKey, err := gobottle.ParsePKIXPublicKey(pubDER)
 ```
 
 ## SLH-DSA Post-Quantum Signatures
@@ -249,15 +249,15 @@ keyShake, err := slhdsa.GenerateKey(rand.Reader, slhdsa.SHAKE_128s)
 
 ```go
 // Sign a message (SLH-DSA signs messages directly, no pre-hashing)
-signature, err := cryptutil.Sign(rand.Reader, key, message)
+signature, err := gobottle.Sign(rand.Reader, key, message)
 
 // Verify signature
-err = cryptutil.Verify(key.Public(), message, signature)
+err = gobottle.Verify(key.Public(), message, signature)
 
 // Sign with context for domain separation
 opts := &slhdsa.Options{Context: []byte("my-application")}
-signature, err := cryptutil.Sign(rand.Reader, key, message, opts)
-err = cryptutil.Verify(key.Public(), message, signature, opts)
+signature, err := gobottle.Sign(rand.Reader, key, message, opts)
+err = gobottle.Verify(key.Public(), message, signature, opts)
 ```
 
 ### Using SLH-DSA with Bottles
@@ -266,11 +266,11 @@ err = cryptutil.Verify(key.Public(), message, signature, opts)
 // SLH-DSA keys work seamlessly with bottles
 key, _ := slhdsa.GenerateKey(rand.Reader, slhdsa.SHA2_128s)
 
-bottle := cryptutil.NewBottle([]byte("hash-based signed message"))
+bottle := gobottle.NewBottle([]byte("hash-based signed message"))
 bottle.Sign(rand.Reader, key)
 
 // Verify on open
-opener := cryptutil.MustOpener()
+opener := gobottle.MustOpener()
 msg, info, err := opener.Open(bottle)
 if info.SignedBy(key.Public()) {
     fmt.Println("Verified SLH-DSA signature")
@@ -281,12 +281,12 @@ if info.SignedBy(key.Public()) {
 
 ```go
 // Marshal to PKCS#8 (private) / PKIX (public)
-privDER, err := cryptutil.MarshalSLHDSAPrivateKey(key)
-pubDER, err := cryptutil.MarshalPKIXPublicKey(key.Public())
+privDER, err := gobottle.MarshalSLHDSAPrivateKey(key)
+pubDER, err := gobottle.MarshalPKIXPublicKey(key.Public())
 
 // Parse from DER
-privateKey, err := cryptutil.ParseSLHDSAPrivateKey(privDER)
-publicKey, err := cryptutil.ParsePKIXPublicKey(pubDER)
+privateKey, err := gobottle.ParseSLHDSAPrivateKey(privDER)
+publicKey, err := gobottle.ParsePKIXPublicKey(pubDER)
 ```
 
 ## ECDH Message Encryption
@@ -295,10 +295,10 @@ Simple encryption to ECDSA/ECDH keys, supporting TPM and HSM backends through th
 
 ```go
 // Encrypt to an ECDH public key
-ciphertext, err := cryptutil.ECDHEncrypt(rand.Reader, plaintext, ecdhPublicKey)
+ciphertext, err := gobottle.ECDHEncrypt(rand.Reader, plaintext, ecdhPublicKey)
 
 // Decrypt with private key (or any ECDHHandler)
-plaintext, err := cryptutil.ECDHDecrypt(ciphertext, ecdhPrivateKey)
+plaintext, err := gobottle.ECDHDecrypt(ciphertext, ecdhPrivateKey)
 ```
 
 ## IDCard
@@ -307,7 +307,7 @@ IDCards allow entities to declare sub-keys with specific purposes (signing, decr
 
 ```go
 // Create an IDCard for a signing key
-idcard, err := cryptutil.NewIDCard(signingKey.Public())
+idcard, err := gobottle.NewIDCard(signingKey.Public())
 
 // Add metadata
 idcard.Meta = map[string]string{"name": "Alice", "email": "alice@example.com"}
@@ -323,7 +323,7 @@ idcard.SetKeyDuration(encryptionKey.Public(), 365*24*time.Hour) // 1 year expiry
 signedIDCard, err := idcard.Sign(rand.Reader, signingKey)
 
 // Load and verify an IDCard
-var loaded cryptutil.IDCard
+var loaded gobottle.IDCard
 err = loaded.UnmarshalBinary(signedIDCard)
 
 // Check key purposes
@@ -342,7 +342,7 @@ Keychain provides secure storage for private keys, indexed by their public key.
 
 ```go
 // Create a keychain
-kc := cryptutil.NewKeychain()
+kc := gobottle.NewKeychain()
 
 // Add keys (supports ECDSA, Ed25519, RSA, ML-KEM)
 kc.AddKey(ecdsaPrivateKey)
@@ -365,7 +365,7 @@ for signer := range kc.Signers {
 }
 
 // Use keychain with Opener
-opener, err := cryptutil.NewOpener(kc)
+opener, err := gobottle.NewOpener(kc)
 ```
 
 ## Membership
@@ -374,7 +374,7 @@ Memberships provide cryptographically signed group affiliations.
 
 ```go
 // Create a membership
-membership := cryptutil.NewMembership(memberIDCard, groupPublicKey)
+membership := gobottle.NewMembership(memberIDCard, groupPublicKey)
 membership.Info["role"] = "admin"
 
 // Sign with group owner's key
@@ -393,10 +393,10 @@ Low-level signing utilities that handle algorithm-specific requirements automati
 
 ```go
 // Sign a message (hashing handled automatically)
-signature, err := cryptutil.Sign(rand.Reader, privateKey, message)
+signature, err := gobottle.Sign(rand.Reader, privateKey, message)
 
 // Verify a signature
-err = cryptutil.Verify(publicKey, message, signature)
+err = gobottle.Verify(publicKey, message, signature)
 if err != nil {
     fmt.Println("Signature verification failed")
 }
@@ -410,10 +410,10 @@ Extended PKIX support including ML-KEM and ML-DSA keys:
 
 ```go
 // Marshal any public key to PKIX format
-der, err := cryptutil.MarshalPKIXPublicKey(publicKey)
+der, err := gobottle.MarshalPKIXPublicKey(publicKey)
 
 // Parse PKIX public key (supports ML-KEM, ML-DSA)
-publicKey, err := cryptutil.ParsePKIXPublicKey(der)
+publicKey, err := gobottle.ParsePKIXPublicKey(der)
 ```
 
 ### Short Buffer Encryption
@@ -422,10 +422,10 @@ Encrypt small buffers (like AES keys) to various key types:
 
 ```go
 // Encrypt a short buffer to any supported public key
-encrypted, err := cryptutil.EncryptShortBuffer(rand.Reader, aesKey, recipientPublicKey)
+encrypted, err := gobottle.EncryptShortBuffer(rand.Reader, aesKey, recipientPublicKey)
 
 // Decrypt
-decrypted, err := cryptutil.DecryptShortBuffer(encrypted, recipientPrivateKey)
+decrypted, err := gobottle.DecryptShortBuffer(encrypted, recipientPrivateKey)
 ```
 
 ### Memory Clearing
@@ -434,7 +434,7 @@ Securely clear sensitive data from memory:
 
 ```go
 privateKeyBytes := make([]byte, 32)
-defer cryptutil.MemClr(privateKeyBytes)
+defer gobottle.MemClr(privateKeyBytes)
 ```
 
 ### Hashing
@@ -443,10 +443,10 @@ Helper for single or multi-level hashing:
 
 ```go
 // Single hash
-digest := cryptutil.Hash(data, sha256.New)
+digest := gobottle.Hash(data, sha256.New)
 
 // Multi-level hash (hash of hash)
-digest := cryptutil.Hash(data, sha256.New, sha256.New)
+digest := gobottle.Hash(data, sha256.New, sha256.New)
 ```
 
 ## Supported Key Types

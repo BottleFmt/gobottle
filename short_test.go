@@ -1,4 +1,4 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"bytes"
@@ -6,19 +6,19 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/KarpelesLab/cryptutil"
+	"github.com/BottleFmt/gobottle"
 )
 
 func TestShortEdwards(t *testing.T) {
 	// test ecdh over ed25519 using ShortBuffer methods (simplified)
 	// ed25519 cannot be used directly in x25519 encryption and requires some tweaks to work right
 	msg := []byte("message to daniel")
-	enc, err := cryptutil.EncryptShortBuffer(rand.Reader, msg, daniel.(ed25519.PrivateKey).Public())
+	enc, err := gobottle.EncryptShortBuffer(rand.Reader, msg, daniel.(ed25519.PrivateKey).Public())
 	if err != nil {
 		t.Errorf("failed to encrypt: %s", err)
 	}
 
-	dec, err := cryptutil.DecryptShortBuffer(enc, daniel)
+	dec, err := gobottle.DecryptShortBuffer(enc, daniel)
 	if err != nil {
 		t.Errorf("failed to decrypt: %s", err)
 	}

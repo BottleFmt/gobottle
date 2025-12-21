@@ -1,16 +1,16 @@
-package cryptutil_test
+package gobottle_test
 
 import (
 	"bytes"
 	"crypto/rand"
 	"testing"
 
-	"github.com/KarpelesLab/cryptutil"
+	"github.com/BottleFmt/gobottle"
 )
 
 func TestMLKEMHybridEncryptDecrypt(t *testing.T) {
 	// Generate a hybrid ML-KEM key pair
-	priv, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+	priv, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
@@ -26,12 +26,12 @@ func TestMLKEMHybridEncryptDecrypt(t *testing.T) {
 
 	// Test encryption/decryption
 	plaintext := []byte("hello post-quantum world!")
-	ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, pub)
+	ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, priv)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, priv)
 	if err != nil {
 		t.Fatalf("failed to decrypt: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestMLKEMHybridEncryptDecrypt(t *testing.T) {
 
 func TestMLKEMPureEncryptDecrypt(t *testing.T) {
 	// Generate a non-hybrid ML-KEM key pair
-	priv, err := cryptutil.GenerateMLKEMKey(rand.Reader, false)
+	priv, err := gobottle.GenerateMLKEMKey(rand.Reader, false)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
@@ -56,12 +56,12 @@ func TestMLKEMPureEncryptDecrypt(t *testing.T) {
 
 	// Test encryption/decryption with pure ML-KEM
 	plaintext := []byte("hello pure post-quantum world!")
-	ciphertext, err := cryptutil.MLKEMEncrypt(rand.Reader, plaintext, pub)
+	ciphertext, err := gobottle.MLKEMEncrypt(rand.Reader, plaintext, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, priv)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, priv)
 	if err != nil {
 		t.Fatalf("failed to decrypt: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestMLKEMPureEncryptDecrypt(t *testing.T) {
 
 func TestMLKEM1024HybridEncryptDecrypt(t *testing.T) {
 	// Generate a hybrid ML-KEM-1024 key pair
-	priv, err := cryptutil.GenerateMLKEMKey1024(rand.Reader, true)
+	priv, err := gobottle.GenerateMLKEMKey1024(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM-1024 key: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestMLKEM1024HybridEncryptDecrypt(t *testing.T) {
 		t.Fatal("expected hybrid key")
 	}
 
-	if priv.Variant() != cryptutil.MLKEM1024 {
+	if priv.Variant() != gobottle.MLKEM1024 {
 		t.Fatalf("expected MLKEM1024 variant, got %v", priv.Variant())
 	}
 
@@ -93,12 +93,12 @@ func TestMLKEM1024HybridEncryptDecrypt(t *testing.T) {
 
 	// Test encryption/decryption
 	plaintext := []byte("hello ML-KEM-1024 post-quantum world!")
-	ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, pub)
+	ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, priv)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, priv)
 	if err != nil {
 		t.Fatalf("failed to decrypt: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestMLKEM1024HybridEncryptDecrypt(t *testing.T) {
 
 func TestMLKEM1024KeyMarshalUnmarshal(t *testing.T) {
 	// Test ML-KEM-1024 hybrid key marshalling
-	priv, err := cryptutil.GenerateMLKEMKey1024(rand.Reader, true)
+	priv, err := gobottle.GenerateMLKEMKey1024(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM-1024 key: %v", err)
 	}
@@ -118,8 +118,8 @@ func TestMLKEM1024KeyMarshalUnmarshal(t *testing.T) {
 	pub := priv.MLKEMPublic()
 
 	// Marshal and unmarshal public key
-	pubBytes := cryptutil.MarshalMLKEMPublicKey(pub)
-	pub2, err := cryptutil.UnmarshalMLKEMPublicKey(pubBytes)
+	pubBytes := gobottle.MarshalMLKEMPublicKey(pub)
+	pub2, err := gobottle.UnmarshalMLKEMPublicKey(pubBytes)
 	if err != nil {
 		t.Fatalf("failed to unmarshal public key: %v", err)
 	}
@@ -128,13 +128,13 @@ func TestMLKEM1024KeyMarshalUnmarshal(t *testing.T) {
 		t.Fatal("expected hybrid public key after unmarshal")
 	}
 
-	if pub2.Variant() != cryptutil.MLKEM1024 {
+	if pub2.Variant() != gobottle.MLKEM1024 {
 		t.Fatalf("expected MLKEM1024 variant after unmarshal, got %v", pub2.Variant())
 	}
 
 	// Marshal and unmarshal private key
-	privBytes := cryptutil.MarshalMLKEMPrivateKey(priv)
-	priv2, err := cryptutil.UnmarshalMLKEMPrivateKey(privBytes)
+	privBytes := gobottle.MarshalMLKEMPrivateKey(priv)
+	priv2, err := gobottle.UnmarshalMLKEMPrivateKey(privBytes)
 	if err != nil {
 		t.Fatalf("failed to unmarshal private key: %v", err)
 	}
@@ -143,18 +143,18 @@ func TestMLKEM1024KeyMarshalUnmarshal(t *testing.T) {
 		t.Fatal("expected hybrid private key after unmarshal")
 	}
 
-	if priv2.Variant() != cryptutil.MLKEM1024 {
+	if priv2.Variant() != gobottle.MLKEM1024 {
 		t.Fatalf("expected MLKEM1024 variant after unmarshal, got %v", priv2.Variant())
 	}
 
 	// Verify encryption with original key can be decrypted with unmarshalled key
 	plaintext := []byte("test ML-KEM-1024 key serialization")
-	ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, pub)
+	ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, priv2)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, priv2)
 	if err != nil {
 		t.Fatalf("failed to decrypt with unmarshalled key: %v", err)
 	}
@@ -166,7 +166,7 @@ func TestMLKEM1024KeyMarshalUnmarshal(t *testing.T) {
 
 func TestMLKEMPKIXEncoding(t *testing.T) {
 	// Test PKIX encoding for pure ML-KEM-768 key
-	priv768, err := cryptutil.GenerateMLKEMKey768(rand.Reader, false)
+	priv768, err := gobottle.GenerateMLKEMKey768(rand.Reader, false)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM-768 key: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 		t.Fatalf("failed to marshal ML-KEM-768 public key to PKIX: %v", err)
 	}
 
-	pub768Parsed, err := cryptutil.ParseMLKEMPublicKey(pkix768)
+	pub768Parsed, err := gobottle.ParseMLKEMPublicKey(pkix768)
 	if err != nil {
 		t.Fatalf("failed to parse ML-KEM-768 public key from PKIX: %v", err)
 	}
@@ -185,12 +185,12 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 	if pub768Parsed.IsHybrid() {
 		t.Error("parsed key should not be hybrid")
 	}
-	if pub768Parsed.Variant() != cryptutil.MLKEM768 {
+	if pub768Parsed.Variant() != gobottle.MLKEM768 {
 		t.Errorf("expected MLKEM768 variant, got %v", pub768Parsed.Variant())
 	}
 
 	// Test PKIX encoding for hybrid ML-KEM-768 key
-	privHybrid, err := cryptutil.GenerateMLKEMKey768(rand.Reader, true)
+	privHybrid, err := gobottle.GenerateMLKEMKey768(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate hybrid ML-KEM-768 key: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 		t.Fatalf("failed to marshal hybrid ML-KEM-768 public key to PKIX: %v", err)
 	}
 
-	pubHybridParsed, err := cryptutil.ParseMLKEMPublicKey(pkixHybrid)
+	pubHybridParsed, err := gobottle.ParseMLKEMPublicKey(pkixHybrid)
 	if err != nil {
 		t.Fatalf("failed to parse hybrid ML-KEM-768 public key from PKIX: %v", err)
 	}
@@ -209,7 +209,7 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 	if !pubHybridParsed.IsHybrid() {
 		t.Error("parsed key should be hybrid")
 	}
-	if pubHybridParsed.Variant() != cryptutil.MLKEM768 {
+	if pubHybridParsed.Variant() != gobottle.MLKEM768 {
 		t.Errorf("expected MLKEM768 variant, got %v", pubHybridParsed.Variant())
 	}
 
@@ -219,7 +219,7 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 		t.Fatalf("failed to marshal private key to PKCS#8: %v", err)
 	}
 
-	privParsed, err := cryptutil.ParseMLKEMPrivateKey(pkcs8Priv)
+	privParsed, err := gobottle.ParseMLKEMPrivateKey(pkcs8Priv)
 	if err != nil {
 		t.Fatalf("failed to parse private key from PKCS#8: %v", err)
 	}
@@ -230,12 +230,12 @@ func TestMLKEMPKIXEncoding(t *testing.T) {
 
 	// Verify encryption with original key can be decrypted with parsed key
 	plaintext := []byte("test PKIX encoding roundtrip")
-	ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, pubHybrid)
+	ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, pubHybrid)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, privParsed)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, privParsed)
 	if err != nil {
 		t.Fatalf("failed to decrypt with parsed key: %v", err)
 	}
@@ -249,33 +249,33 @@ func TestGenericParsePKIXPublicKey(t *testing.T) {
 	// Test that ParsePKIXPublicKey works for both ML-KEM and classical keys
 
 	// Test with ML-KEM hybrid key
-	mlkemPriv, err := cryptutil.GenerateMLKEMKey768(rand.Reader, true)
+	mlkemPriv, err := gobottle.GenerateMLKEMKey768(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
 	mlkemPub := mlkemPriv.MLKEMPublic()
 
-	mlkemPKIX, err := cryptutil.MarshalPKIXPublicKey(mlkemPub)
+	mlkemPKIX, err := gobottle.MarshalPKIXPublicKey(mlkemPub)
 	if err != nil {
 		t.Fatalf("failed to marshal ML-KEM public key: %v", err)
 	}
 
-	parsedMLKEM, err := cryptutil.ParsePKIXPublicKey(mlkemPKIX)
+	parsedMLKEM, err := gobottle.ParsePKIXPublicKey(mlkemPKIX)
 	if err != nil {
 		t.Fatalf("failed to parse ML-KEM PKIX key: %v", err)
 	}
 
-	if _, ok := parsedMLKEM.(*cryptutil.MLKEMPublicKey); !ok {
+	if _, ok := parsedMLKEM.(*gobottle.MLKEMPublicKey); !ok {
 		t.Errorf("expected *MLKEMPublicKey, got %T", parsedMLKEM)
 	}
 
 	// Test with classical ECDSA key (using alice from bottle_test.go)
-	ecdsaPKIX, err := cryptutil.MarshalPKIXPublicKey(alice.Public())
+	ecdsaPKIX, err := gobottle.MarshalPKIXPublicKey(alice.Public())
 	if err != nil {
 		t.Fatalf("failed to marshal ECDSA public key: %v", err)
 	}
 
-	parsedECDSA, err := cryptutil.ParsePKIXPublicKey(ecdsaPKIX)
+	parsedECDSA, err := gobottle.ParsePKIXPublicKey(ecdsaPKIX)
 	if err != nil {
 		t.Fatalf("failed to parse ECDSA PKIX key: %v", err)
 	}
@@ -287,7 +287,7 @@ func TestGenericParsePKIXPublicKey(t *testing.T) {
 
 func TestMLKEMKeyMarshalUnmarshal(t *testing.T) {
 	// Test hybrid key marshalling
-	priv, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+	priv, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
@@ -295,8 +295,8 @@ func TestMLKEMKeyMarshalUnmarshal(t *testing.T) {
 	pub := priv.MLKEMPublic()
 
 	// Marshal and unmarshal public key
-	pubBytes := cryptutil.MarshalMLKEMPublicKey(pub)
-	pub2, err := cryptutil.UnmarshalMLKEMPublicKey(pubBytes)
+	pubBytes := gobottle.MarshalMLKEMPublicKey(pub)
+	pub2, err := gobottle.UnmarshalMLKEMPublicKey(pubBytes)
 	if err != nil {
 		t.Fatalf("failed to unmarshal public key: %v", err)
 	}
@@ -306,8 +306,8 @@ func TestMLKEMKeyMarshalUnmarshal(t *testing.T) {
 	}
 
 	// Marshal and unmarshal private key
-	privBytes := cryptutil.MarshalMLKEMPrivateKey(priv)
-	priv2, err := cryptutil.UnmarshalMLKEMPrivateKey(privBytes)
+	privBytes := gobottle.MarshalMLKEMPrivateKey(priv)
+	priv2, err := gobottle.UnmarshalMLKEMPrivateKey(privBytes)
 	if err != nil {
 		t.Fatalf("failed to unmarshal private key: %v", err)
 	}
@@ -318,12 +318,12 @@ func TestMLKEMKeyMarshalUnmarshal(t *testing.T) {
 
 	// Verify encryption with original key can be decrypted with unmarshalled key
 	plaintext := []byte("test key serialization")
-	ciphertext, err := cryptutil.HybridEncrypt(rand.Reader, plaintext, pub)
+	ciphertext, err := gobottle.HybridEncrypt(rand.Reader, plaintext, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt: %v", err)
 	}
 
-	decrypted, err := cryptutil.MLKEMDecrypt(ciphertext, priv2)
+	decrypted, err := gobottle.MLKEMDecrypt(ciphertext, priv2)
 	if err != nil {
 		t.Fatalf("failed to decrypt with unmarshalled key: %v", err)
 	}
@@ -335,7 +335,7 @@ func TestMLKEMKeyMarshalUnmarshal(t *testing.T) {
 
 func TestBottleWithMLKEMHybrid(t *testing.T) {
 	// Generate ML-KEM hybrid key pair for recipient
-	recipientPriv, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+	recipientPriv, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
@@ -343,7 +343,7 @@ func TestBottleWithMLKEMHybrid(t *testing.T) {
 	recipientPub := recipientPriv.MLKEMPublic()
 
 	// Create and encrypt a bottle
-	bottle := cryptutil.NewBottle([]byte("post-quantum secure message"))
+	bottle := gobottle.NewBottle([]byte("post-quantum secure message"))
 	err = bottle.Encrypt(rand.Reader, recipientPub)
 	if err != nil {
 		t.Fatalf("failed to encrypt bottle: %v", err)
@@ -354,7 +354,7 @@ func TestBottleWithMLKEMHybrid(t *testing.T) {
 	bottle.Sign(rand.Reader, alice)
 
 	// Open the bottle
-	opener, err := cryptutil.NewOpener(recipientPriv)
+	opener, err := gobottle.NewOpener(recipientPriv)
 	if err != nil {
 		t.Fatalf("failed to create opener: %v", err)
 	}
@@ -379,14 +379,14 @@ func TestBottleWithMLKEMHybrid(t *testing.T) {
 
 func TestBottleWithMixedRecipients(t *testing.T) {
 	// Generate ML-KEM hybrid key pair
-	mlkemPriv, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+	mlkemPriv, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
 	mlkemPub := mlkemPriv.MLKEMPublic()
 
 	// Create a bottle encrypted for both classical (bob) and ML-KEM recipient
-	bottle := cryptutil.NewBottle([]byte("message for mixed recipients"))
+	bottle := gobottle.NewBottle([]byte("message for mixed recipients"))
 	err = bottle.Encrypt(rand.Reader, bob.Public(), mlkemPub)
 	if err != nil {
 		t.Fatalf("failed to encrypt bottle: %v", err)
@@ -405,7 +405,7 @@ func TestBottleWithMixedRecipients(t *testing.T) {
 	}
 
 	// Open with classical key (bob)
-	openerBob, err := cryptutil.NewOpener(bob)
+	openerBob, err := gobottle.NewOpener(bob)
 	if err != nil {
 		t.Fatalf("failed to create opener for bob: %v", err)
 	}
@@ -424,7 +424,7 @@ func TestBottleWithMixedRecipients(t *testing.T) {
 	}
 
 	// Open with ML-KEM key
-	openerMLKEM, err := cryptutil.NewOpener(mlkemPriv)
+	openerMLKEM, err := gobottle.NewOpener(mlkemPriv)
 	if err != nil {
 		t.Fatalf("failed to create opener for ML-KEM: %v", err)
 	}
@@ -445,7 +445,7 @@ func TestBottleWithMixedRecipients(t *testing.T) {
 
 func TestShortBufferWithMLKEM(t *testing.T) {
 	// Test EncryptShortBuffer and DecryptShortBuffer with ML-KEM
-	priv, err := cryptutil.GenerateMLKEMKey(rand.Reader, true)
+	priv, err := gobottle.GenerateMLKEMKey(rand.Reader, true)
 	if err != nil {
 		t.Fatalf("failed to generate ML-KEM key: %v", err)
 	}
@@ -456,12 +456,12 @@ func TestShortBufferWithMLKEM(t *testing.T) {
 	key := make([]byte, 32)
 	rand.Read(key)
 
-	encrypted, err := cryptutil.EncryptShortBuffer(rand.Reader, key, pub)
+	encrypted, err := gobottle.EncryptShortBuffer(rand.Reader, key, pub)
 	if err != nil {
 		t.Fatalf("failed to encrypt short buffer: %v", err)
 	}
 
-	decrypted, err := cryptutil.DecryptShortBuffer(encrypted, priv)
+	decrypted, err := gobottle.DecryptShortBuffer(encrypted, priv)
 	if err != nil {
 		t.Fatalf("failed to decrypt short buffer: %v", err)
 	}
