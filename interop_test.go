@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"testing"
+	"time"
 
 	"github.com/BottleFmt/gobottle"
 	"github.com/fxamacker/cbor/v2"
@@ -83,6 +84,28 @@ var (
 
 	// Bottle with maximum allowed header string length (edge case)
 	largeHeaderKey = mustDecode("haJiY3RkY2JvcnhAYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWV2YWx1ZUH2APb2")
+
+	// =========================================================================
+	// IDCard-specific test vectors (tests integer-keyed CBOR maps)
+	// =========================================================================
+
+	// IDCard with minimal fields (ECDSA P-256) - empty Meta, nil Groups/Revoke
+	idcardMinimal = mustDecode("haBY6oWhYmN0ZmlkY2FyZFjZpgFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimACGmlXJSIDgaMBWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgAhppVyUiBIFkc2lnbgT2BfYG9gD29gH2gYMAWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgWEcwRQIgB6sLmXxs4iGoIkq6fODzQLJenILaZyBUR5wJ3XxxO4cCIQCmEf6dEZkicJUeByxbkBGOv8wHhDNBdKXre+F7FpLTDw==")
+
+	// IDCard with empty Meta map (explicit empty)
+	idcardEmptyMeta = mustDecode("haBY6oWhYmN0ZmlkY2FyZFjZpgFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimACGmlXJSIDgaMBWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgAhppVyUiBIFkc2lnbgT2BfYGoAD29gH2gYMAWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgWEgwRgIhALOLrMD7kf3zIcSUVN3WdVoocLcOHp0WdPzRjEjdZ1YUAiEA1KsD/PqAF50w15H6H/6Bp+vG/vIfRC1cC9uCOEbdxVs=")
+
+	// IDCard with multiple SubKeys (sign + decrypt purposes)
+	idcardMultipleKeys = mustDecode("haBZAWWFoWJjdGZpZGNhcmRZAVOmAVhbMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE09oIghTDnluvtv0+NKMhTS2nfC3TzR4DWnZK7czzFPZSH6bJN5oMZCp5X7pfI4BbIyTVtGeRKg6GTpzzfE+KYAIaaVclIgOCowFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimACGmlXJSIEgWRzaWduowFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABIoEQn7veaBj/RTUi1qMYYQgxJoMWBvLTMJRSLcwLlelv38NDoNgTRt8nNKjm/nBCY0ClkSPYv5tRVHPe2o2k64CGmlXJSIEgWdkZWNyeXB0BPYF9gahZG5hbWVlQWxpY2UA9vYB9oGDAFhbMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE09oIghTDnluvtv0+NKMhTS2nfC3TzR4DWnZK7czzFPZSH6bJN5oMZCp5X7pfI4BbIyTVtGeRKg6GTpzzfE+KYFhGMEQCIG61XNinbnrTCVaC+O8WYe2z7D6gJIpYKGsUDmKjarZuAiAWqY6egk/elce5bkhiotumipTD4SjchsqXQK/OOPu+sQ==")
+
+	// IDCard with Ed25519 key (minimal, compact encoding)
+	idcardEd25519Minimal = mustDecode("haBYjIWhYmN0ZmlkY2FyZFh7pgFYLDAqMAUGAytlcAMhAEy+j47jx0kyBtlF5iXxDLyREkqe8y6k53AQXOBJRPw+AhppVyUiA4GjAVgsMCowBQYDK2VwAyEATL6PjuPHSTIG2UXmJfEMvJESSp7zLqTncBBc4ElE/D4CGmlXJSIEgWRzaWduBPYF9gb2APb2AfaBgwBYLDAqMAUGAytlcAMhAEy+j47jx0kyBtlF5iXxDLyREkqe8y6k53AQXOBJRPw+WEDDnXaKx/8QqclbAUt/1o8MjP434BaEuwX4VjTMghatBQyVAJOpxgxNzIdHUGS9/+4c56oJfH1zNVDHbKyBvhYN")
+
+	// IDCard with SubKey having expiration time
+	idcardWithExpiry = mustDecode("haBY+4WhYmN0ZmlkY2FyZFjqpgFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimACGmlXJSIDgaQBWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgAhppVyUiAxprOFiiBIFkc2lnbgT2BfYGoWRuYW1lZUFsaWNlAPb2AfaBgwBYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimBYRzBFAiEAjSHUHctRCSoNVVPwpiRLnVrhjeq9QTwjMPEOUGcGlv4CIEGqg089iHG7hMgs3RZ9LArebE91afQydJCHmvbXBBQQ")
+
+	// IDCard with multiple purposes on same key (sign + decrypt)
+	idcardMultiplePurposes = mustDecode("haBY/YWhYmN0ZmlkY2FyZFjspgFYWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNPaCIIUw55br7b9PjSjIU0tp3wt080eA1p2Su3M8xT2Uh+myTeaDGQqeV+6XyOAWyMk1bRnkSoOhk6c83xPimACGmlXJSIDgaMBWFswWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATT2giCFMOeW6+2/T40oyFNLad8LdPNHgNadkrtzPMU9lIfpsk3mgxkKnlful8jgFsjJNW0Z5EqDoZOnPN8T4pgAhppVyUiBIJnZGVjcnlwdGRzaWduBPYF9gahZG5hbWVlQWxpY2UA9vYB9oGDAFhbMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE09oIghTDnluvtv0+NKMhTS2nfC3TzR4DWnZK7czzFPZSH6bJN5oMZCp5X7pfI4BbIyTVtGeRKg6GTpzzfE+KYFhGMEQCIHE+RNdbo8HbxKEc7ANZKhJwBDckPEsoAG8/iadPoEUrAiB8+FEfAqlrHmf7o97UrNFZ10jwZjwnu+LNpAr9aCHHfQ==")
 )
 
 // TestInteropEmptyMessage tests opening a bottle with empty message content
@@ -497,6 +520,135 @@ func TestInteropLargeHeaderKey(t *testing.T) {
 	}
 }
 
+// =========================================================================
+// IDCard-specific tests (test integer-keyed CBOR maps)
+// =========================================================================
+
+// TestInteropIDCardMinimal tests parsing a minimal IDCard (ECDSA, no Meta)
+func TestInteropIDCardMinimal(t *testing.T) {
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardMinimal)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Verify it has no Meta
+	if len(id.Meta) != 0 {
+		t.Errorf("expected empty Meta, got %v", id.Meta)
+	}
+
+	// Verify SubKeys
+	if len(id.SubKeys) != 1 {
+		t.Errorf("expected 1 SubKey, got %d", len(id.SubKeys))
+	}
+
+	// Verify key purpose
+	if err := id.TestKeyPurpose(alice.Public(), "sign"); err != nil {
+		t.Errorf("key should have sign purpose: %v", err)
+	}
+}
+
+// TestInteropIDCardEmptyMeta tests parsing IDCard with explicit empty Meta map
+func TestInteropIDCardEmptyMeta(t *testing.T) {
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardEmptyMeta)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Meta should be empty (not nil)
+	if id.Meta == nil {
+		t.Error("Meta should be empty map, not nil")
+	}
+	if len(id.Meta) != 0 {
+		t.Errorf("expected empty Meta, got %v", id.Meta)
+	}
+}
+
+// TestInteropIDCardMultipleKeys tests parsing IDCard with multiple SubKeys
+func TestInteropIDCardMultipleKeys(t *testing.T) {
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardMultipleKeys)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Verify we have 2 SubKeys
+	if len(id.SubKeys) != 2 {
+		t.Errorf("expected 2 SubKeys, got %d", len(id.SubKeys))
+	}
+
+	// Verify Alice's key has sign purpose
+	if err := id.TestKeyPurpose(alice.Public(), "sign"); err != nil {
+		t.Errorf("Alice's key should have sign purpose: %v", err)
+	}
+
+	// Verify Bob's key has decrypt purpose
+	if err := id.TestKeyPurpose(bob.Public(), "decrypt"); err != nil {
+		t.Errorf("Bob's key should have decrypt purpose: %v", err)
+	}
+
+	// Verify Meta
+	if id.Meta["name"] != "Alice" {
+		t.Errorf("expected name Alice, got %s", id.Meta["name"])
+	}
+}
+
+// TestInteropIDCardEd25519Minimal tests parsing a minimal Ed25519 IDCard
+func TestInteropIDCardEd25519Minimal(t *testing.T) {
+	chloeKey := chloe.(ed25519.PrivateKey)
+
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardEd25519Minimal)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Verify key purpose
+	if err := id.TestKeyPurpose(chloeKey.Public(), "sign"); err != nil {
+		t.Errorf("Chloe's key should have sign purpose: %v", err)
+	}
+
+	// Ed25519 public key should be smaller than ECDSA P-256
+	if len(id.Self) > 50 { // Ed25519 PKIX is ~44 bytes
+		t.Errorf("Ed25519 public key should be compact, got %d bytes", len(id.Self))
+	}
+}
+
+// TestInteropIDCardWithExpiry tests parsing IDCard with SubKey expiration
+func TestInteropIDCardWithExpiry(t *testing.T) {
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardWithExpiry)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Verify SubKey has expiration
+	if len(id.SubKeys) != 1 {
+		t.Fatalf("expected 1 SubKey, got %d", len(id.SubKeys))
+	}
+	if id.SubKeys[0].Expires == nil {
+		t.Error("SubKey should have expiration time")
+	}
+}
+
+// TestInteropIDCardMultiplePurposes tests parsing IDCard with multiple purposes on same key
+func TestInteropIDCardMultiplePurposes(t *testing.T) {
+	var id gobottle.IDCard
+	err := id.UnmarshalBinary(idcardMultiplePurposes)
+	if err != nil {
+		t.Fatalf("failed to unmarshal IDCard: %v", err)
+	}
+
+	// Verify key has both purposes
+	if err := id.TestKeyPurpose(alice.Public(), "sign"); err != nil {
+		t.Errorf("key should have sign purpose: %v", err)
+	}
+	if err := id.TestKeyPurpose(alice.Public(), "decrypt"); err != nil {
+		t.Errorf("key should have decrypt purpose: %v", err)
+	}
+}
+
 // TestGenerateInteropVectors is a utility test that generates the test vectors
 // This is disabled by default; run with: go test -v -run TestGenerateInteropVectors
 func TestGenerateInteropVectors(t *testing.T) {
@@ -672,5 +824,59 @@ func TestGenerateInteropVectors(t *testing.T) {
 		bottle.Header[largeKey] = "value"
 		data, _ := cbor.Marshal(bottle)
 		t.Logf("largeHeaderKey = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// =========================================================================
+	// IDCard test vectors (integer-keyed CBOR maps)
+	// =========================================================================
+
+	// 20. Minimal IDCard (ECDSA, no Meta)
+	{
+		id, _ := gobottle.NewIDCard(alice.Public())
+		// Don't set Meta - should be nil
+		data, _ := id.Sign(rand.Reader, alice)
+		t.Logf("idcardMinimal = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// 21. IDCard with explicit empty Meta
+	{
+		id, _ := gobottle.NewIDCard(alice.Public())
+		id.Meta = make(map[string]string) // explicit empty map
+		data, _ := id.Sign(rand.Reader, alice)
+		t.Logf("idcardEmptyMeta = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// 22. IDCard with multiple SubKeys
+	{
+		id, _ := gobottle.NewIDCard(alice.Public())
+		id.SetKeyPurposes(bob.Public(), "decrypt")
+		id.Meta = map[string]string{"name": "Alice"}
+		data, _ := id.Sign(rand.Reader, alice)
+		t.Logf("idcardMultipleKeys = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// 23. Minimal Ed25519 IDCard
+	{
+		id, _ := gobottle.NewIDCard(chloeKey.Public())
+		data, _ := id.Sign(rand.Reader, chloeKey)
+		t.Logf("idcardEd25519Minimal = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// 24. IDCard with SubKey expiration
+	{
+		id, _ := gobottle.NewIDCard(alice.Public())
+		id.SetKeyDuration(alice.Public(), 365*24*time.Hour) // 1 year
+		id.Meta = map[string]string{"name": "Alice"}
+		data, _ := id.Sign(rand.Reader, alice)
+		t.Logf("idcardWithExpiry = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
+	}
+
+	// 25. IDCard with multiple purposes on same key
+	{
+		id, _ := gobottle.NewIDCard(alice.Public())
+		id.SetKeyPurposes(alice.Public(), "decrypt", "sign")
+		id.Meta = map[string]string{"name": "Alice"}
+		data, _ := id.Sign(rand.Reader, alice)
+		t.Logf("idcardMultiplePurposes = mustDecode(%q)", base64.StdEncoding.EncodeToString(data))
 	}
 }
