@@ -521,6 +521,182 @@ func TestInteropLargeHeaderKey(t *testing.T) {
 }
 
 // =========================================================================
+// Round-trip encoding tests (verify encoding produces identical bytes)
+// =========================================================================
+
+// TestInteropRoundTripUnsignedBottles tests that unsigned bottles encode identically
+// Note: Tests with maps in headers are excluded because Go map iteration order is
+// non-deterministic. For cross-implementation compatibility, implementations should
+// use canonical CBOR encoding (RFC 8949 Section 4.2) with sorted map keys.
+func TestInteropRoundTripUnsignedBottles(t *testing.T) {
+	tests := []struct {
+		name string
+		data []byte
+	}{
+		// These have empty or no header maps, so encoding is deterministic
+		{"unsignedCleartext", unsignedCleartext},
+		{"cborNullPayload", cborNullPayload},
+		{"cborEmptyArrayPayload", cborEmptyArrayPayload},
+		{"cborEmptyMapPayload", cborEmptyMapPayload},
+		{"cborEmptyStringPayload", cborEmptyStringPayload},
+		{"cborIntegerBoundaries", cborIntegerBoundaries},
+		{"cborBinary24Bytes", cborBinary24Bytes},
+		{"cborBinary256Bytes", cborBinary256Bytes},
+		{"cborArray24Elements", cborArray24Elements},
+		{"cborNegativeIntegers", cborNegativeIntegers},
+		// Note: headerWithVariousTypes, largeHeaderKey, cborNestedPayload, and
+		// cborIntegerKeyMap are excluded due to non-deterministic map key ordering
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Decode
+			var bottle gobottle.Bottle
+			err := cbor.Unmarshal(tt.data, &bottle)
+			if err != nil {
+				t.Fatalf("failed to decode: %v", err)
+			}
+
+			// Re-encode
+			encoded, err := cbor.Marshal(&bottle)
+			if err != nil {
+				t.Fatalf("failed to re-encode: %v", err)
+			}
+
+			// Compare bytes
+			if !bytesEqual(tt.data, encoded) {
+				t.Errorf("round-trip encoding mismatch:\n  original: %x\n  encoded:  %x", tt.data, encoded)
+			}
+		})
+	}
+}
+
+// TestInteropRoundTripIDCards tests that IDCard structures can be decoded, re-encoded,
+// and decoded again with identical semantic content. This verifies encoding correctness
+// without requiring exact byte-level matching (which may differ due to map key ordering).
+func TestInteropRoundTripIDCards(t *testing.T) {
+	chloeKey := chloe.(ed25519.PrivateKey)
+
+	tests := []struct {
+		name      string
+		data      []byte
+		checkFunc func(t *testing.T, id *gobottle.IDCard)
+	}{
+		{
+			"idcardMinimal",
+			idcardMinimal,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if len(id.SubKeys) != 1 {
+					t.Errorf("expected 1 SubKey, got %d", len(id.SubKeys))
+				}
+				if err := id.TestKeyPurpose(alice.Public(), "sign"); err != nil {
+					t.Errorf("key should have sign purpose: %v", err)
+				}
+			},
+		},
+		{
+			"idcardEmptyMeta",
+			idcardEmptyMeta,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if id.Meta == nil || len(id.Meta) != 0 {
+					t.Errorf("expected empty Meta map, got %v", id.Meta)
+				}
+			},
+		},
+		{
+			"idcardMultipleKeys",
+			idcardMultipleKeys,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if len(id.SubKeys) != 2 {
+					t.Errorf("expected 2 SubKeys, got %d", len(id.SubKeys))
+				}
+				if id.Meta["name"] != "Alice" {
+					t.Errorf("expected name Alice, got %s", id.Meta["name"])
+				}
+			},
+		},
+		{
+			"idcardEd25519Minimal",
+			idcardEd25519Minimal,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if err := id.TestKeyPurpose(chloeKey.Public(), "sign"); err != nil {
+					t.Errorf("Chloe's key should have sign purpose: %v", err)
+				}
+			},
+		},
+		{
+			"idcardWithExpiry",
+			idcardWithExpiry,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if len(id.SubKeys) != 1 || id.SubKeys[0].Expires == nil {
+					t.Error("SubKey should have expiration time")
+				}
+			},
+		},
+		{
+			"idcardMultiplePurposes",
+			idcardMultiplePurposes,
+			func(t *testing.T, id *gobottle.IDCard) {
+				if err := id.TestKeyPurpose(alice.Public(), "sign"); err != nil {
+					t.Errorf("key should have sign purpose: %v", err)
+				}
+				if err := id.TestKeyPurpose(alice.Public(), "decrypt"); err != nil {
+					t.Errorf("key should have decrypt purpose: %v", err)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Decode the original IDCard
+			var id1 gobottle.IDCard
+			err := id1.UnmarshalBinary(tt.data)
+			if err != nil {
+				t.Fatalf("failed to decode original: %v", err)
+			}
+
+			// Re-encode the IDCard structure
+			encoded, err := cbor.Marshal(&id1)
+			if err != nil {
+				t.Fatalf("failed to re-encode: %v", err)
+			}
+
+			// Decode the re-encoded IDCard
+			var id2 gobottle.IDCard
+			err = cbor.Unmarshal(encoded, &id2)
+			if err != nil {
+				t.Fatalf("failed to decode re-encoded: %v", err)
+			}
+
+			// Verify semantic equivalence
+			tt.checkFunc(t, &id2)
+
+			// Verify key fields match
+			if !bytesEqual(id1.Self, id2.Self) {
+				t.Error("Self field mismatch after round-trip")
+			}
+			if len(id1.SubKeys) != len(id2.SubKeys) {
+				t.Errorf("SubKeys count mismatch: %d vs %d", len(id1.SubKeys), len(id2.SubKeys))
+			}
+		})
+	}
+}
+
+// bytesEqual compares two byte slices
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// =========================================================================
 // IDCard-specific tests (test integer-keyed CBOR maps)
 // =========================================================================
 
