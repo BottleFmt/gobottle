@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ModChain/edwards25519/extra25519"
+	"github.com/KarpelesLab/edwards25519/extra25519"
 )
 
 // EncryptShortBuffer performs a simple encryption of a buffer
@@ -66,7 +66,7 @@ func DecryptShortBuffer(k []byte, rcvd any) ([]byte, error) {
 			return r.Decrypt(nil, k, nil)
 		}
 	case ed25519.PrivateKey:
-		// see: https://github.com/ModChain/edwards25519/blob/master/extra25519/extra25519.go#L16
+		// see: https://github.com/KarpelesLab/edwards25519/blob/master/extra25519/extra25519.go#L16
 		digest := Hash(r.Seed(), sha512.New)[:32]
 		defer MemClr(digest)
 
